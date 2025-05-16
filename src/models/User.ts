@@ -6,7 +6,8 @@ export interface IUser extends Document {
     email: string;
     phone: string;
     password: string;
-    role: 'patient' | 'doctor' | 'admin';
+    role: 'user' | 'client' | "deliver" | 'admin';
+    status: 'verify' | 'unverify';
     createdAt: Date;
     updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
@@ -31,12 +32,6 @@ const userSchema = new Schema<IUser>(
             required: [true, 'Phone is required'],
             unique: true,
             trim: true,
-            validate: {
-                validator: function (v: string) {
-                    return /^\d{10}$/.test(v);
-                },
-                message: 'Phone number must be 10 digits long',
-            },
         },
         password: {
             type: String,
@@ -45,9 +40,14 @@ const userSchema = new Schema<IUser>(
         },
         role: {
             type: String,
-            enum: ['patient', 'doctor', 'admin'],
-            default: 'patient',
+            enum: ['user', 'client', 'deliver', 'admin'],
+            default: 'client',
         },
+        status: {
+            type: String,
+            enum: ['verify', 'unverify'],
+            default: 'unverify',
+        }
     },
     {
         timestamps: true,
