@@ -51,19 +51,22 @@ export const login = async (req: Request, res: Response) => {
             throw new ErrorResponse('Invalid credentials', 401);
         }
 
-        // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             throw new ErrorResponse('Invalid credentials', 401);
         }
 
-        // Generate token
+        if (user.status === 'unverify') {
+            throw new ErrorResponse('Unverify email', 401);
+        }
+
         const token = generateToken({ id: user._id.toString() });
 
-        res.json({
+        res.status(200).json({
             _id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             role: user.role,
             token,
         });
