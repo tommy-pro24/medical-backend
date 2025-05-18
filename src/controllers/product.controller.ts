@@ -97,3 +97,42 @@ export const getAllProduct = async (_req: Request, res: Response): Promise<any> 
     }
 
 }
+
+export const updateProduct = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            throw new ErrorResponse('User not found', 404);
+        }
+
+        if (user.role !== 'admin') {
+            throw new ErrorResponse('Unauthorized user', 403);
+        }
+
+        const { _id, name, category, description, price, stockNumber, lowStockThreshold } = req.body;
+
+        await Product.findByIdAndUpdate(_id, {
+            name, category, description, price, stockNumber, lowStockThreshold,
+        },
+            {
+                new: true
+            }
+        );
+
+        return res.status(200);
+
+
+    } catch (error) {
+
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+
+    }
+
+}
