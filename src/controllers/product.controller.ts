@@ -55,7 +55,7 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
 
         const { name, category, description, price, stockLevel, lowStockThreshold } = req.body;
 
-        await Product.create({
+        const data = await Product.create({
             name: name,
             category: category,
             stockNumber: stockLevel,
@@ -64,7 +64,27 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
             lowStockThreshold: lowStockThreshold
         });
 
-        return res.status(200);
+        return res.status(200).json(data);
+
+    } catch (error) {
+
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+
+    }
+
+}
+
+export const getAllProduct = async (_req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const data = await Product.find();
+
+        return res.status(200).json(data);
 
     } catch (error) {
 
