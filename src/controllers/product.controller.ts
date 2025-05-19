@@ -53,12 +53,12 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
             throw new ErrorResponse('Unauthorized user', 403);
         }
 
-        const { name, category, description, price, stockLevel, lowStockThreshold } = req.body;
+        const { name, category, description, price, stockNumber, lowStockThreshold } = req.body;
 
         const data = await Product.create({
             name: name,
             category: category,
-            stockNumber: stockLevel,
+            stockNumber: stockNumber,
             description: description,
             price: price,
             lowStockThreshold: lowStockThreshold
