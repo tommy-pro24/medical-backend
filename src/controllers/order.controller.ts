@@ -19,9 +19,9 @@ export const getOrders = async (req: Request, res: Response): Promise<any> => {
 
         let orders;
         if (user.role === 'client') {
-            orders = await OrderModel.find({ clientId: user._id }).populate('clientId', 'name') as PopulatedOrder[];
+            orders = await OrderModel.find({ clientId: user._id }).populate('clientId', 'name').sort({ createdAt: -1 }).lean() as PopulatedOrder[];
         } else {
-            orders = await OrderModel.find().populate('clientId', 'name') as PopulatedOrder[];
+            orders = await OrderModel.find().populate('clientId', 'name').sort({ createdAt: -1 }).lean() as PopulatedOrder[];
         }
 
         const formattedOrders = orders.map(order => ({
