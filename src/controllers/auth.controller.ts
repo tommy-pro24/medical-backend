@@ -81,7 +81,11 @@ export const login = async (req: Request, res: Response) => {
 
 export const getProfile = async (req: Request, res: Response) => {
     try {
-        const user = await User.findById(req.user._id).select('-password');
+
+        const { id } = req.body;
+
+        const user = await User.findById(id);
+
         if (!user) {
             throw new ErrorResponse('User not found', 404);
         }
