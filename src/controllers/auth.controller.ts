@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
+import { OrderModel } from '../models/order';
 import { generateToken } from '../utils/jwt';
 import { ErrorResponse } from '../utils/errorResponse';
 
@@ -91,13 +92,18 @@ export const getProfile = async (req: Request, res: Response) => {
 
         const token = generateToken({ id: user._id.toString() });
 
+        const count = await OrderModel.countDocuments({ status: 'pending' });
+
         res.status(200).json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            token,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                token
+            },
+            count
         });
 
     } catch (error) {
