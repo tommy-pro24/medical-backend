@@ -92,7 +92,13 @@ export const getProfile = async (req: Request, res: Response) => {
 
         const token = generateToken({ id: user._id.toString() });
 
-        const count = await OrderModel.countDocuments({ status: 'pending' });
+        let status = 'no';
+
+        if (user.role === 'admin') status = 'pending';
+        else if (user.role === 'warehouse') status = 'dispatched';
+
+        const count = await OrderModel.countDocuments({ status: status });
+
 
         res.status(200).json({
             user: {
