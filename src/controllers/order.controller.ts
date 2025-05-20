@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ErrorResponse } from '../utils/errorResponse';
 import { OrderModel, IOrder } from '../models/order';
 import { IUser } from '../models/User';
+import { Product } from '../models/product';
 
 interface PopulatedOrder extends Omit<IOrder, 'clientId'> {
     clientId: IUser;
@@ -51,6 +52,7 @@ export const setNewOrder = async (user: any, data: any): Promise<any> => {
     try {
 
         const orderItems = data.map((item: any) => ({
+            productId: item.productId,
             productName: item.productName,
             quantity: item.quantity,
             unitPrice: item.unitPrice
@@ -68,6 +70,12 @@ export const setNewOrder = async (user: any, data: any): Promise<any> => {
             totalAmount
         });
 
+        for (const item of data) {
+            await Product.updateOne(
+                { _id: item.productId },
+                { $inc: { stockNumber: -item.quantity } },
+            );
+        }
         return {
             id: newOrder._id.toString(),
             clientId: user._id.toString(),

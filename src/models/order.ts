@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface OrderItem {
+    productId: string;
     productName: string;
     quantity: number;
     unitPrice: number;
@@ -17,6 +18,7 @@ export interface IOrder extends Document {
 }
 
 const OrderItemSchema: Schema = new Schema({
+    productId: { type: String, required: true },
     productName: { type: String, required: true },
     quantity: { type: Number, required: true },
     unitPrice: { type: Number, required: true },
