@@ -2,7 +2,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { Socket } from 'socket.io';
 import { logger } from '../utils/logger';
-import { setNewOrder } from '../controllers/order.controller';
+import { setNewOrder, updateOrderStatus } from '../controllers/order.controller';
 import { verifyToken } from '../utils/jwt';
 import { User } from '../models/User';
 import { ErrorResponse as ApiErrorResponse } from '../utils/errorResponse';
@@ -112,6 +112,9 @@ export class SocketService {
                     case 'SET_NEW_ORDER':
                         await this.handleSetNewOrder(socket, message);
                         break;
+                    case 'SET_DISPATCHED':
+                        await this.handleChangeOrderStatus(socket, message);
+                        break;
                     default:
                         this.sendError(socket, {
                             message: `Unknown message type: ${message.type}`,
@@ -158,9 +161,38 @@ export class SocketService {
 
     }
 
+    private async handleChangeOrderStatus(socket: Socket, message: SocketMessage): Promise<any> {
+        try {
+
+            const { token, id, newStatus } = message.payload;
+
+            if (!token) {
+                this.sendError(socket, {
+                    message: 'Authentication token is required',
+                    statusCode: 401
+                }, 'AUTHENTICATION_ERROR');
+                return;
+            }
+
+            const user = await this.verifySocketToken(token);
+
+            this.emitToAll("SET_DISPATCHED",
+                {
+                    userId: user._id.toString(),
+                    orderId: id,
+                    newStatus
+                }
+            )
+
+            await updateOrderStatus({ id, newStatus });
+
+        } catch (error) {
+            this.sendError(socket, error, 'SET_DISPATCHED_ERROR');
+        }
+    }
+
     // Method to emit events to all connected clients
     public emitToAll(event: string, data: any): void {
-        console.log(data);
         this.io.emit("message", {
             type: event,
             payload: data,
