@@ -2,7 +2,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { Socket } from 'socket.io';
 import { logger } from '../utils/logger';
-import { getOrders } from '../controllers/order.controller';
+import { setNewOrder } from '../controllers/order.controller';
 import { verifyToken } from '../utils/jwt';
 import { User } from '../models/User';
 import { ErrorResponse as ApiErrorResponse } from '../utils/errorResponse';
@@ -33,7 +33,7 @@ export class SocketService {
     private constructor(httpServer: HTTPServer) {
         this.io = new SocketIOServer(httpServer, {
             cors: {
-                origin: process.env.CLIENT_URL || '*',
+                origin: process.env.FRONTEND_URL || '*',
                 methods: ['GET', 'POST'],
                 credentials: true
             }
@@ -109,10 +109,9 @@ export class SocketService {
                 logger.info(`Received message from ${socket.id}:`, message);
 
                 switch (message.type) {
-                    case 'GET_ORDERS':
-                        await this.handleGetOrders(socket, message);
+                    case 'SET_NEW_ORDER':
+                        await this.handleSetNewOrder(socket, message);
                         break;
-                    // Add more message type handlers here
                     default:
                         this.sendError(socket, {
                             message: `Unknown message type: ${message.type}`,
@@ -125,9 +124,11 @@ export class SocketService {
         });
     }
 
-    private async handleGetOrders(socket: Socket, message: SocketMessage): Promise<void> {
+    private async handleSetNewOrder(socket: Socket, message: SocketMessage): Promise<any> {
+
         try {
-            const { token } = message.payload;
+
+            const { token, products } = message.payload;
 
             if (!token) {
                 this.sendError(socket, {
@@ -140,26 +141,30 @@ export class SocketService {
             // Verify token and get user
             const user = await this.verifySocketToken(token);
 
-            const orders = await getOrders(user?._id);
+            const result = await setNewOrder(user, products);
 
-            const response = {
-                type: 'GET_ORDERS_RESPONSE',
-                payload: {
-                    orders,
-                    timestamp: Date.now()
-                }
-            };
+            try {
+                this.emitToAll("NEW_ORDER", result);
 
-            socket.emit('message', response);
+            } catch (error) {
+
+                this.sendError(socket, error, 'SET_NEW_ORDER_ERROR');
+
+            }
 
         } catch (error) {
-            this.sendError(socket, error, 'GET_ORDERS_ERROR');
+            this.sendError(socket, error, 'SET_NEW_ORDER_ERROR');
         }
+
     }
 
     // Method to emit events to all connected clients
     public emitToAll(event: string, data: any): void {
-        this.io.emit(event, data);
+        console.log(data);
+        this.io.emit("message", {
+            type: event,
+            payload: data,
+        });
     }
 
     // Method to emit events to a specific room
