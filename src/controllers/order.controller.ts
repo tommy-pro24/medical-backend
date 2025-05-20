@@ -12,17 +12,32 @@ interface PopulatedOrder extends Omit<IOrder, 'clientId'> {
 export const getOrders = async (req: Request, res: Response): Promise<any> => {
     try {
 
+        const { from, to } = req.body;
 
         const user = await User.findById(req.user._id);
-
         if (!user) return null;
 
-        let orders;
+        let query: any = {};
+
+        // Filter by user role
         if (user.role === 'client') {
-            orders = await OrderModel.find({ clientId: user._id }).populate('clientId', 'name').sort({ createdAt: -1 }).lean() as PopulatedOrder[];
-        } else {
-            orders = await OrderModel.find().populate('clientId', 'name').sort({ createdAt: -1 }).lean() as PopulatedOrder[];
+            query.clientId = user._id;
         }
+
+        console.log(from);
+
+        // Filter by date range (if provided)
+        if (from) {
+            query.orderDate = {
+                $gte: new Date(from),
+                ...(to && { $lte: new Date(to) })
+            };
+        }
+
+        const orders = await OrderModel.find(query)
+            .populate('clientId', 'name')
+            .sort({ createdAt: -1 })
+            .lean() as PopulatedOrder[];
 
         const formattedOrders = orders.map(order => ({
             id: order._id.toString(),
