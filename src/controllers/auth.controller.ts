@@ -81,7 +81,6 @@ export const login = async (req: Request, res: Response) => {
 
 export const getProfile = async (req: Request, res: Response) => {
     try {
-
         const { id } = req.body;
 
         const user = await User.findById(id);
@@ -89,7 +88,18 @@ export const getProfile = async (req: Request, res: Response) => {
         if (!user) {
             throw new ErrorResponse('User not found', 404);
         }
-        res.json(user);
+
+        const token = generateToken({ id: user._id.toString() });
+
+        res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            token,
+        });
+
     } catch (error) {
         if (error instanceof ErrorResponse) {
             res.status(error.statusCode).json({ message: error.message });
