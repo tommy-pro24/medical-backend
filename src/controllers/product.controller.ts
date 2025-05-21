@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ErrorResponse } from '../utils/errorResponse';
 import { Product } from '../models/product';
 import { User } from '../models/User';
+import { History } from '../models/history';
 
 export const updateStock = async (req: Request, res: Response): Promise<any> => {
 
@@ -19,6 +20,28 @@ export const updateStock = async (req: Request, res: Response): Promise<any> => 
 
         const { id, newStock } = req.body;
 
+        const product: any = await Product.findById(id);
+
+        await History.create({
+            productId: id,
+            productName: product?.name,
+            actionType: 'stock-in',
+            userId: user._id,
+            userName: user.name + "(Admin)",
+            details: {
+                oldValue: {
+                    stockLevel: product?.stockNumber,
+                    price: product?.price
+                },
+                newValue: {
+                    stockLevel: newStock,
+                    price: product?.price
+                },
+                quantity: newStock - product?.stockNumber,
+                reference: 'Emergency Stock Replenishment'
+            }
+        })
+
         await Product.findByIdAndUpdate(
             id,
             { stockNumber: newStock },
@@ -28,6 +51,8 @@ export const updateStock = async (req: Request, res: Response): Promise<any> => 
         res.status(200);
 
     } catch (error) {
+
+        console.log(error);
 
         if (error instanceof ErrorResponse) {
             res.status(error.statusCode).json({ message: error.message });
@@ -63,6 +88,22 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
             price: price,
             lowStockThreshold: lowStockThreshold
         });
+
+        await History.create({
+            productId: data._id,
+            productName: data.name,
+            actionType: 'new',
+            timestamp: new Date(),
+            userId: user._id,
+            userName: user.name + "(Admin)",
+            details: {
+                newValue: {
+                    stockLevel: stockNumber,
+                    price: price * stockNumber
+                },
+                reference: "Add new product"
+            },
+        })
 
         return res.status(200).json(data);
 
