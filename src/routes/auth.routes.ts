@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { register, login, getProfile } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
+import { authenticate } from '../middleware/auth';
+import { getAllUsers } from '../controllers/auth.controller';
+import { updateUser } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -30,5 +33,9 @@ router.post(
 );
 
 router.post('/profile', getProfile);
+
+router.post('/getAllUsers', authenticate, getAllUsers);
+
+router.post('/updateUser', authenticate, updateUser);
 
 export default router; 
