@@ -119,4 +119,80 @@ export const getProfile = async (req: Request, res: Response) => {
             res.status(500).json({ message: 'Server error' });
         }
     }
-}; 
+};
+
+export const getAllUsers = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            throw new ErrorResponse('User not found', 404);
+        }
+
+        if (user.role === 'client') {
+            throw new ErrorResponse('Unauthorized user', 403);
+        }
+
+        const users = await User.find().select('name email role _id');
+
+        const formattedUsers = users.map(user => ({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            _id: user._id.toString(), // converts ObjectId to string
+        }));
+
+
+        return res.status(200).json(formattedUsers);
+
+    } catch (error) {
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+}
+
+export const updateUser = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            throw new ErrorResponse('User not found', 404);
+        }
+        if (user.role === 'client') {
+            throw new ErrorResponse('Unauthorized user', 403);
+        }
+
+        const { _id, name, email, role } = req.body;
+
+        await User.findByIdAndUpdate(
+            _id,
+            {
+                name: name,
+                email: email,
+                role: role
+            },
+            { new: true }
+        );
+
+        return res.status(200).send();
+
+    } catch (error) {
+
+        console.log(error);
+
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+}
