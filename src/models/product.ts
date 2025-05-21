@@ -42,7 +42,8 @@ const productSchema = new Schema<IProduct>(
             type: Number,
             default: 0
         }
-    }
-)
+    }, {
+    timestamps: true, // optional: adds createdAt and updatedAt
+})
 
 export const Product = mongoose.model<IProduct>('Product', productSchema); 

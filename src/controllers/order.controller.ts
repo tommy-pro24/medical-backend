@@ -4,6 +4,7 @@ import { ErrorResponse } from '../utils/errorResponse';
 import { OrderModel, IOrder } from '../models/order';
 import { IUser } from '../models/User';
 import { Product } from '../models/product';
+import { History } from '../models/history';
 
 interface PopulatedOrder extends Omit<IOrder, 'clientId'> {
     clientId: IUser;
@@ -63,9 +64,7 @@ export const getOrders = async (req: Request, res: Response): Promise<any> => {
 }
 
 export const setNewOrder = async (user: any, data: any): Promise<any> => {
-
     try {
-
         const orderItems = data.map((item: any) => ({
             productId: item.productId,
             productName: item.productName,
@@ -85,12 +84,47 @@ export const setNewOrder = async (user: any, data: any): Promise<any> => {
             totalAmount
         });
 
-        for (const item of data) {
-            await Product.updateOne(
-                { _id: item.productId },
-                { $inc: { stockNumber: -item.quantity } },
-            );
-        }
+        // Get all products and update their stock
+        const products = await Product.find({
+            _id: { $in: data.map((item: any) => item.productId) }
+        });
+
+        // Create history records and update stock
+        await Promise.all(
+            products.map(async (product) => {
+                const orderItem = data.find((item: any) => item.productId === product._id.toString());
+                if (!orderItem) return;
+
+                // Create history record
+                await History.create({
+                    productId: product._id,
+                    productName: product.name,
+                    actionType: 'stock-out',
+                    timestamp: new Date(),
+                    userId: user._id,
+                    userName: user.name,
+                    details: {
+                        oldValue: {
+                            stockLevel: product.stockNumber,
+                            price: product.price
+                        },
+                        newValue: {
+                            stockLevel: product.stockNumber - orderItem.quantity,
+                            price: product.price
+                        },
+                        quantity: orderItem.quantity,
+                        reference: `Order ID: ${newOrder._id}`
+                    }
+                });
+
+                // Update product stock
+                return Product.updateOne(
+                    { _id: product._id },
+                    { $inc: { stockNumber: -orderItem.quantity } }
+                );
+            })
+        );
+
         return {
             id: newOrder._id.toString(),
             clientId: user._id.toString(),
@@ -101,15 +135,10 @@ export const setNewOrder = async (user: any, data: any): Promise<any> => {
             totalAmount
         };
 
-
     } catch (error) {
-
         console.log(error);
         return null;
-
-
     }
-
 }
 
 export const updateOrderStatus = async (data: { id: any; newStatus: any; }) => {
@@ -122,4 +151,4 @@ export const updateOrderStatus = async (data: { id: any; newStatus: any; }) => {
         console.log(error);
     }
 
-} 
+}

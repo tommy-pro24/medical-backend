@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import productRoutes from './product.routes';
 import orderRoutes from './ourder.routes';
+import historyRoutes from './history.routes';
 
 const router = Router();
 
@@ -10,5 +11,7 @@ router.use('/auth', authRoutes);
 router.use('/product', productRoutes);
 
 router.use('/order', orderRoutes);
+
+router.use('/history', historyRoutes);
 
 export default router; 
