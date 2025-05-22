@@ -141,14 +141,17 @@ export const setNewOrder = async (user: any, data: any): Promise<any> => {
     }
 }
 
-export const updateOrderStatus = async (data: { id: any; newStatus: any; }) => {
+export const updateOrderStatus = async (data: { id: any; newStatus: any; }): Promise<any> => {
 
     try {
 
-        await OrderModel.findByIdAndUpdate(data.id, { status: data.newStatus }, { new: true });
+        const order = await OrderModel.findByIdAndUpdate(data.id, { status: data.newStatus }, { new: true });
 
+        if (order) return order.clientId;
+        return null;
     } catch (error) {
         console.log(error);
+        return null;
     }
 
 }
