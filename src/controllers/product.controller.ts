@@ -65,28 +65,25 @@ export const updateStock = async (req: Request, res: Response): Promise<any> => 
 }
 
 export const addNewProduct = async (req: Request, res: Response): Promise<any> => {
-
     try {
-
         const user = await User.findById(req.user._id);
 
-        if (!user) {
-            throw new ErrorResponse('User not found', 404);
-        }
+        if (!user) throw new ErrorResponse('User not found', 404);
+        if (user.role !== 'admin') throw new ErrorResponse('Unauthorized user', 403);
 
-        if (user.role !== 'admin') {
-            throw new ErrorResponse('Unauthorized user', 403);
-        }
+        let { name, category, description, price, stockNumber, lowStockThreshold } = req.body;
 
-        const { name, category, description, price, stockNumber, lowStockThreshold } = req.body;
+        // Capitalize first letter
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        description = description.charAt(0).toUpperCase() + description.slice(1);
 
         const data = await Product.create({
-            name: name,
-            category: category,
-            stockNumber: stockNumber,
-            description: description,
-            price: price,
-            lowStockThreshold: lowStockThreshold
+            name,
+            category,
+            stockNumber,
+            description,
+            price,
+            lowStockThreshold
         });
 
         await History.create({
@@ -95,7 +92,7 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
             actionType: 'new',
             timestamp: new Date(),
             userId: user._id,
-            userName: user.name + "(Admin)",
+            userName: user.name + " (Admin)",
             details: {
                 newValue: {
                     stockLevel: stockNumber,
@@ -103,20 +100,17 @@ export const addNewProduct = async (req: Request, res: Response): Promise<any> =
                 },
                 reference: "Add new product"
             },
-        })
+        });
 
         return res.status(200).json(data);
 
     } catch (error) {
-
         if (error instanceof ErrorResponse) {
             res.status(error.statusCode).json({ message: error.message });
         } else {
             res.status(500).json({ message: 'Server error' });
         }
-
     }
-
 }
 
 export const getAllProduct = async (_req: Request, res: Response): Promise<any> => {
