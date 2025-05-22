@@ -196,3 +196,80 @@ export const updateUser = async (req: Request, res: Response): Promise<any> => {
     }
 
 }
+
+export const updateProfile = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            throw new ErrorResponse('User not found', 404);
+        }
+
+        const { name, email, phone } = req.body;
+
+        await User.findByIdAndUpdate(
+            user._id,
+            {
+                name: name,
+                email: email,
+                phone: phone
+            },
+            {
+                new: true
+            }
+        )
+
+        return res.status(200).send();
+
+    } catch (error) {
+        console.log(error);
+
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+}
+
+export const updatePassword = async (req: Request, res: Response): Promise<any> => {
+
+    try {
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            throw new ErrorResponse('User not found', 404);
+        }
+
+        const { currentPassword, newPassword } = req.body;
+
+        const isMatch = await user.comparePassword(currentPassword);
+
+        if (!isMatch) {
+            throw new ErrorResponse('Invalid password', 401);
+        }
+
+        await User.findByIdAndUpdate(
+            user._id,
+            {
+                password: newPassword
+            },
+            { new: true }
+        )
+
+        return res.status(200).send();
+
+
+    } catch (error) {
+        if (error instanceof ErrorResponse) {
+            res.status(error.statusCode).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'Server error' });
+        }
+    }
+
+}
