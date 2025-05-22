@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { register, login, getProfile } from '../controllers/auth.controller';
+import { register, login, getProfile, updateProfile, updatePassword } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth';
 import { getAllUsers } from '../controllers/auth.controller';
@@ -37,5 +37,9 @@ router.post('/profile', getProfile);
 router.post('/getAllUsers', authenticate, getAllUsers);
 
 router.post('/updateUser', authenticate, updateUser);
+
+router.post('/updateProfile', authenticate, updateProfile);
+
+router.post('/updatePassword', authenticate, updatePassword);
 
 export default router; 
