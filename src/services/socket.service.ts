@@ -174,17 +174,18 @@ export class SocketService {
                 return;
             }
 
-            const user = await this.verifySocketToken(token);
+            await this.verifySocketToken(token);
+
+            const userId = await updateOrderStatus({ id, newStatus });
 
             this.emitToAll("SET_DISPATCHED",
                 {
-                    userId: user._id.toString(),
+                    userId: userId.toString(),
                     orderId: id,
                     newStatus
                 }
             )
 
-            await updateOrderStatus({ id, newStatus });
 
         } catch (error) {
             this.sendError(socket, error, 'SET_DISPATCHED_ERROR');

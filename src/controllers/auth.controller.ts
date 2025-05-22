@@ -3,6 +3,8 @@ import { User } from '../models/User';
 import { OrderModel } from '../models/order';
 import { generateToken } from '../utils/jwt';
 import { ErrorResponse } from '../utils/errorResponse';
+import bcrypt from 'bcryptjs';
+
 
 export const register = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -253,10 +255,14 @@ export const updatePassword = async (req: Request, res: Response): Promise<any> 
             throw new ErrorResponse('Invalid password', 401);
         }
 
+        const salt = await bcrypt.genSalt(10);
+
+        const password = await bcrypt.hash(newPassword, salt);
+
         await User.findByIdAndUpdate(
             user._id,
             {
-                password: newPassword
+                password: password
             },
             { new: true }
         )
