@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { connectDB } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
-import routes from './routes';
+import * as routes from './routes';
 import { SocketService } from './services/socket.service';
 
 // Load environment variables
@@ -30,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('', routes);
+app.use('/', routes.default);
 
 // Error handling
 app.use(errorHandler);

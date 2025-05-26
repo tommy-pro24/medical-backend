@@ -145,7 +145,11 @@ export const updateOrderStatus = async (data: { id: any; newStatus: any; }): Pro
 
     try {
 
-        const order = await OrderModel.findByIdAndUpdate(data.id, { status: data.newStatus }, { new: true });
+        const order: any = await OrderModel.findByIdAndUpdate(data.id, { status: data.newStatus }, { new: true });
+
+        if (data.newStatus === 'cancelled') {
+            await cancelOrder(order.clientId, data.id);
+        }
 
         if (order) return order.clientId;
         return null;
@@ -154,4 +158,61 @@ export const updateOrderStatus = async (data: { id: any; newStatus: any; }): Pro
         return null;
     }
 
+}
+
+
+const cancelOrder = async (userId: any, id: any) => {
+    try {
+
+        const user: any = await User.findById(userId);
+
+        const order = await OrderModel.findById(id);
+        if (!order) {
+            throw new ErrorResponse('Order not found', 404);
+        }
+
+        // Get all products from the order
+        const products = await Product.find({
+            _id: { $in: order.items.map(item => item.productId) }
+        });
+
+        // Update product stock and create history records
+        await Promise.all(
+            products.map(async (product) => {
+                const orderItem = order.items.find(item => item.productId.toString() === product._id.toString());
+                if (!orderItem) return;
+
+                // Create history record for stock return
+                await History.create({
+                    productId: product._id,
+                    productName: product.name,
+                    actionType: 'stock-in',
+                    timestamp: new Date(),
+                    userId: user._id,
+                    userName: user.name,
+                    details: {
+                        oldValue: {
+                            stockLevel: product.stockNumber,
+                            price: product.price
+                        },
+                        newValue: {
+                            stockLevel: product.stockNumber + orderItem.quantity,
+                            price: product.price
+                        },
+                        quantity: orderItem.quantity,
+                        reference: `Cancelled Order ID: ${order._id}`
+                    }
+                });
+
+                // Update product stock by adding back the quantity
+                return Product.updateOne(
+                    { _id: product._id },
+                    { $inc: { stockNumber: orderItem.quantity } }
+                );
+            })
+        );
+
+    } catch (error) {
+        console.log(error);
+    }
 }
